@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Prototype — port-manager core flows</title>
+<style>
+  :root {
+    --bg:#0a0e14; --panel:#0f141b; --row:#0c1118; --row-alt:#0a0e14;
+    --border:#1e2631; --ink:#d7dde3; --dim:#7a8292;
+    --accent:#64d89f; --warn:#f1c36a; --danger:#f07a7a;
+    --info:#72c1f4; --magenta:#d876d8;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--mono); font-size:13px; }
+  .screen { display:none; }
+  .screen.active { display:block; }
+
+  /* login screen */
+  #login { min-height:100vh; display:none; align-items:center; justify-content:center; padding:20px; }
+  #login.active { display:flex; }
+  #login .card { width:100%; max-width:420px; background:var(--panel); border:1px solid var(--border);
+                  border-radius:10px; padding:32px 28px; }
+  #login h1 { margin:0 0 6px; font-size:20px; }
+  #login h1 .accent { color:var(--accent); }
+  #login p { color:var(--dim); font-size:12.5px; margin:0 0 22px; }
+  #login label { display:block; font-size:11px; color:var(--dim); text-transform:uppercase;
+                  letter-spacing:.6px; margin-bottom:6px; }
+  #login input { width:100%; background:#0a0e14; border:1px solid var(--border); color:var(--ink);
+                  font-family:var(--mono); font-size:14px; padding:10px 12px; border-radius:4px; }
+  #login input:focus { outline:none; box-shadow:0 0 0 1px var(--info); border-color:var(--info); }
+  #login button { width:100%; margin-top:14px; background:var(--panel); color:var(--accent);
+                   border:1px solid var(--accent); padding:10px; border-radius:4px;
+                   font-family:var(--mono); font-size:13px; cursor:pointer; }
+  #login button:hover { background:rgba(100,216,159,.1); }
+  #login .err { color:var(--danger); font-size:11.5px; margin-top:10px; min-height:16px; }
+  #login .footer { margin-top:18px; font-size:10.5px; color:var(--dim); }
+  #login .footer code { background:#0a0e14; padding:1px 4px; border-radius:2px; border:1px solid var(--border); }
+
+  /* dashboard chrome */
+  header { padding:14px 20px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  header .brand { font-weight:700; letter-spacing:.5px; }
+  header .brand span.accent { color:var(--accent); }
+  header .meta { color:var(--dim); font-size:12px; }
+  header .token { margin-left:auto; color:var(--dim); font-size:12px; }
+  header .token b { color:var(--info); }
+  header .logout { background:none; border:1px solid var(--border); color:var(--dim);
+                    padding:4px 8px; border-radius:3px; font-family:var(--mono); font-size:11px; cursor:pointer; }
+  header .logout:hover { border-color:var(--danger); color:var(--danger); }
+  main { padding:18px 20px; }
+  .toolbar { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+  .btn { background:var(--panel); color:var(--ink); border:1px solid var(--border); border-radius:4px;
+         padding:6px 10px; font-family:var(--mono); font-size:12px; cursor:pointer; }
+  .btn:hover { border-color:var(--accent); }
+  .btn.primary { border-color:var(--accent); color:var(--accent); }
+  .btn.active { border-color:var(--info); color:var(--info); }
+  .filter { flex:1; min-width:180px; text-align:left; }
+
+  table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  th { text-align:left; padding:8px 10px; color:var(--dim); font-weight:600;
+       border-bottom:1px solid var(--border);
+       text-transform:uppercase; letter-spacing:.6px; font-size:10.5px; }
+  td { padding:10px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  tr:nth-child(even) td { background:var(--row); }
+  tr.hidden { display:none; }
+  td.port { color:var(--accent); font-weight:700; }
+  td.cmd { white-space:nowrap; max-width:320px; overflow:hidden; text-overflow:ellipsis; }
+  td.cwd { color:var(--dim); font-size:11.5px; white-space:nowrap;
+           max-width:260px; overflow:hidden; text-overflow:ellipsis; }
+  td.cwd .copy { display:inline-block; margin-left:4px; padding:0 4px;
+                  border:1px solid var(--border); border-radius:3px;
+                  color:var(--dim); font-size:10.5px; cursor:pointer; vertical-align:1px; }
+  td.cwd .copy:hover { color:var(--info); border-color:var(--info); }
+  td.up { color:var(--dim); white-space:nowrap; }
+  td.label { color:var(--magenta); font-weight:600; }
+  td.badges span { display:inline-block; padding:2px 6px; border-radius:3px;
+                    border:1px solid var(--border); font-size:10px;
+                    color:var(--dim); margin-right:3px; }
+  td.badges span.cap { color:var(--accent); border-color:var(--accent); }
+  td.badges span.ext { color:var(--warn); border-color:var(--warn); }
+  td.badges span.self { color:var(--danger); border-color:var(--danger); }
+  td.actions { white-space:nowrap; text-align:right; }
+  td.actions button { background:none; border:1px solid var(--border); color:var(--dim);
+                       padding:4px 8px; border-radius:3px; margin-left:3px; cursor:pointer;
+                       font-family:var(--mono); font-size:11px; }
+  td.actions button:hover { border-color:var(--info); color:var(--info); }
+  td.actions button.kill { color:var(--danger); border-color:#3a2428; }
+  td.actions button.kill:hover { background:#2a1518; border-color:var(--danger); }
+  td.actions button.restart-ready { color:var(--magenta); border-color:#3a2640; }
+  td.actions button.disabled { opacity:.35; cursor:not-allowed; }
+  tr.self td { opacity:.75; background:#0d1016; }
+  tr.restart-pending td { background:#141026; border-left:2px solid var(--magenta); }
+  footer { padding:12px 20px; border-top:1px solid var(--border);
+           color:var(--dim); font-size:11px; }
+  .prompt::before { content:"$ "; color:var(--accent); }
+
+  /* Modal (kill / restart / rename confirm) */
+  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:20;
+              align-items:center; justify-content:center; padding:20px; }
+  .overlay.active { display:flex; }
+  .modal { background:var(--panel); border:1px solid var(--border); border-radius:8px;
+            padding:22px; min-width:320px; max-width:420px; }
+  .modal h2 { margin:0 0 8px; font-size:15px; }
+  .modal p { margin:0 0 16px; color:var(--dim); font-size:12.5px; line-height:1.5; }
+  .modal .body { background:#0a0e14; border:1px solid var(--border); border-radius:4px;
+                  padding:10px 12px; font-size:12px; margin:0 0 16px; word-break:break-all; }
+  .modal .row { display:flex; justify-content:flex-end; gap:8px; }
+  .modal .row .btn.danger { border-color:var(--danger); color:var(--danger); }
+  .modal .row .btn.magenta { border-color:var(--magenta); color:var(--magenta); }
+  .modal input { width:100%; background:#0a0e14; border:1px solid var(--border); color:var(--ink);
+                  font-family:var(--mono); font-size:13px; padding:8px 10px; border-radius:4px; margin-bottom:12px; }
+
+  /* Toast */
+  .toast-stack { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:30;
+                  display:flex; flex-direction:column; gap:6px; align-items:center; }
+  .toast { background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--accent);
+            padding:8px 14px; border-radius:4px; font-size:12px; color:var(--ink);
+            box-shadow:0 4px 16px rgba(0,0,0,.35); opacity:0; transform:translateY(6px);
+            transition: opacity .15s, transform .15s; }
+  .toast.show { opacity:1; transform:translateY(0); }
+  .toast.danger { border-left-color:var(--danger); }
+  .toast.magenta { border-left-color:var(--magenta); }
+  .toast.info { border-left-color:var(--info); }
+
+  /* Mobile card view */
+  .cards { display:none; }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:8px;
+          padding:12px; margin-bottom:10px; }
+  .card.self { opacity:.8; border-left:3px solid var(--danger); }
+  .card.restart-pending { border-left:3px solid var(--magenta); }
+  .card.hidden { display:none; }
+  .card .head { display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap; }
+  .card .head .port { color:var(--accent); font-weight:700; font-size:16px; }
+  .card .head .label-inline { color:var(--magenta); font-weight:600; font-size:13px; }
+  .card .head .badge { padding:2px 7px; border-radius:3px; font-size:10.5px;
+                       border:1px solid var(--border); color:var(--dim); }
+  .card .head .badge.cap { color:var(--accent); border-color:var(--accent); }
+  .card .head .badge.ext { color:var(--warn); border-color:var(--warn); }
+  .card .head .badge.self { color:var(--danger); border-color:var(--danger); }
+  .card .head .up { color:var(--dim); margin-left:auto; font-size:12px; }
+  .card .cmd { color:var(--ink); font-size:13px; margin-bottom:4px; word-break:break-all; }
+  .card .cwd { color:var(--dim); font-size:11.5px; margin-bottom:10px; word-break:break-all; }
+  .card-actions { display:flex; gap:6px; flex-wrap:wrap; }
+  .card-actions button { background:none; border:1px solid var(--border); color:var(--dim);
+                          padding:7px 10px; border-radius:3px; cursor:pointer;
+                          font-family:var(--mono); font-size:12px; }
+  .card-actions button.kill { color:var(--danger); border-color:#3a2428; }
+  .card-actions button.restart-ready { color:var(--magenta); border-color:#3a2640; }
+  .card-actions button.disabled { opacity:.35; cursor:not-allowed; }
+
+  /* Prototype controls banner (explains to user it's a demo) */
+  .demo-bar { position:fixed; top:8px; right:8px; z-index:5;
+              background:#1a2130; border:1px solid var(--info); border-radius:4px;
+              padding:6px 10px; font-size:10.5px; color:var(--info); }
+  .demo-bar button { margin-left:6px; background:none; border:1px solid var(--info);
+                      color:var(--info); padding:3px 6px; border-radius:3px; cursor:pointer;
+                      font-family:var(--mono); font-size:10.5px; }
+
+  @media (max-width: 820px) {
+    table { display:none; }
+    .cards { display:block; }
+    header .token { display:none; }
+    main { padding:14px; }
+    .toolbar .filter { flex:1 1 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="demo-bar">
+  prototype · all actions are simulated
+  <button onclick="resetDemo()">reset</button>
+  <button onclick="toggleView()">desktop/mobile preview</button>
+</div>
+
+<!-- Login screen -->
+<div id="login" class="screen active">
+  <div class="card">
+    <h1><span class="accent">▶</span> port-manager</h1>
+    <p>yourhost.example — enter token to access the dashboard.</p>
+    <label>auth token</label>
+    <input id="token-input" type="password" placeholder="paste token"/>
+    <button onclick="tryLogin()">unlock</button>
+    <div class="err" id="login-err"></div>
+    <div class="footer">demo hint: type <code>demo</code> as the token</div>
+  </div>
+</div>
+
+<!-- Dashboard screen -->
+<div id="dashboard" class="screen">
+  <header>
+    <div class="brand"><span class="accent">▶</span> port-manager</div>
+    <div class="meta">host <b>yourhost.example</b> · range <b>40000–40500</b> · refresh <b>2s</b></div>
+    <div class="token">auth ok · user <b>you</b></div>
+    <button class="logout" onclick="logout()">logout</button>
+  </header>
+  <main>
+    <div class="toolbar">
+      <button class="btn primary" onclick="simulateRefresh()">refresh now</button>
+      <button class="btn" id="filter-ext-btn" onclick="toggleFilter('ext')">only external</button>
+      <button class="btn" id="filter-cap-btn" onclick="toggleFilter('cap')">only captured</button>
+      <button class="btn" onclick="toggleRestartHistory()">restart history</button>
+      <input class="btn filter" id="search" placeholder="filter: command, label or cwd…"
+             oninput="applyTextFilter(this.value)"/>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:72px;">port</th>
+          <th style="width:150px;">label</th>
+          <th>command</th>
+          <th>cwd</th>
+          <th style="width:90px;">uptime</th>
+          <th style="width:120px;">source</th>
+          <th style="width:310px; text-align:right;">actions</th>
+        </tr>
+      </thead>
+      <tbody id="rows-desktop"></tbody>
+    </table>
+
+    <div class="cards" id="rows-mobile"></div>
+  </main>
+  <footer>
+    <span class="prompt"></span>scanning 127 own-uid PIDs · <span id="live-count">6</span> listeners in range · libproc scan 8.4ms · session ends on <b>ctrl-c</b>
+  </footer>
+</div>
+
+<!-- Kill confirm modal -->
+<div class="overlay" id="modal-kill">
+  <div class="modal">
+    <h2>Kill port <span id="kill-port" style="color:var(--accent)"></span>?</h2>
+    <p>Sends SIGTERM, waits 3s, then SIGKILL if still alive.
+       The row will disappear once the process exits and the next scan runs.</p>
+    <div class="body" id="kill-body"></div>
+    <div class="row">
+      <button class="btn" onclick="closeModal('modal-kill')">cancel</button>
+      <button class="btn danger" onclick="confirmKill()">SIGTERM → SIGKILL</button>
+    </div>
+  </div>
+</div>
+
+<!-- Restart confirm modal -->
+<div class="overlay" id="modal-restart">
+  <div class="modal">
+    <h2>Restart port <span id="restart-port" style="color:var(--magenta)"></span>?</h2>
+    <p>Fire-and-forget re-run of the previously recorded command in its cwd.
+       No stdout capture — check the process's own terminal if you need output.</p>
+    <div class="body" id="restart-body"></div>
+    <div class="row">
+      <button class="btn" onclick="closeModal('modal-restart')">cancel</button>
+      <button class="btn magenta" onclick="confirmRestart()">submit restart</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rename modal -->
+<div class="overlay" id="modal-rename">
+  <div class="modal">
+    <h2>Rename label</h2>
+    <p>Label persists per (cwd, command). Blank label clears it.</p>
+    <input id="rename-input" placeholder="e.g. staging-api"/>
+    <div class="row">
+      <button class="btn" onclick="closeModal('modal-rename')">cancel</button>
+      <button class="btn primary" onclick="confirmRename()">save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-stack" id="toast-stack"></div>
+
+<script>
+// ── Demo state ────────────────────────────────────────────────
+const SEED = [
+  { id:1, port:40102, label:'blog-dev',     cmd:'npm run dev',
+    cwd:'~/dev/blog',             up:'2h 18m', src:'cap', alive:true, self:false, remembered:false },
+  { id:2, port:40123, label:'jupyter',      cmd:'jupyter lab --no-browser',
+    cwd:'~/notebooks',       up:'5h 42m', src:'ext', alive:true, self:false, remembered:false },
+  { id:3, port:40200, label:'homepage',     cmd:'go run .',
+    cwd:'~/GitHub/yourname/homepage',up:'41m',    src:'cap', alive:true, self:false, remembered:false },
+  { id:4, port:40301, label:'',             cmd:'uvicorn main:app --reload --port 40301',
+    cwd:'~/work/demo',            up:'9m',     src:'ext', alive:true, self:false, remembered:false },
+  { id:5, port:40412, label:'staging-api',  cmd:'node dist/server.js',
+    cwd:'~/work/staging-api',     up:'1d 3h',  src:'cap', alive:true, self:false, remembered:false },
+  { id:6, port:40000, label:'self',         cmd:'./port-manager',
+    cwd:'~/src/port-manager', up:'3h 02m', src:'self', alive:true, self:true, remembered:false },
+  { id:7, port:null,  label:'flaky-worker', cmd:'python worker.py --queue hot',
+    cwd:'~/work/worker',          up:'killed 2m ago', src:'remembered', alive:false, self:false, remembered:true },
+];
+let state = { rows: JSON.parse(JSON.stringify(SEED)), pendingAction:null, filter:{mode:null, text:''} };
+
+function $ (s){ return document.querySelector(s); }
+function $$(s){ return Array.from(document.querySelectorAll(s)); }
+
+function show(id){ $$('.screen').forEach(x=>x.classList.remove('active')); $('#'+id).classList.add('active'); }
+
+// ── Login ────────────────────────────────────────────────────
+function tryLogin(){
+  const v = $('#token-input').value.trim();
+  if(v === 'demo' || v === ''){ // empty allowed for demo convenience
+    $('#login-err').textContent='';
+    show('dashboard'); render();
+  } else {
+    $('#login-err').textContent='invalid token · try "demo" for this prototype';
+  }
+}
+function logout(){ $('#token-input').value=''; show('login'); }
+
+// ── Render ──────────────────────────────────────────────────
+function render(){
+  renderDesktop(); renderMobile(); updateCount();
+}
+function hidden(r){
+  if(state.filter.mode==='ext' && r.src!=='ext') return true;
+  if(state.filter.mode==='cap' && r.src!=='cap') return true;
+  const t = state.filter.text.trim().toLowerCase();
+  if(t){
+    const hay = `${r.port||''} ${r.label} ${r.cmd} ${r.cwd}`.toLowerCase();
+    if(!hay.includes(t)) return true;
+  }
+  return false;
+}
+function esc(s){ return s.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function renderDesktop(){
+  const out=[];
+  state.rows.forEach(r=>{
+    const cls=[ r.self?'self':'', r.remembered?'restart-pending':'', hidden(r)?'hidden':'' ].join(' ');
+    const portCell = r.port ? `<td class="port">${r.port}</td>` : `<td class="port">—</td>`;
+    const badge = r.src==='cap' ? '<span class="cap">captured</span>'
+                : r.src==='ext' ? '<span class="ext">external</span>'
+                : r.src==='self'? '<span class="self">self</span>'
+                :                '<span>remembered</span>';
+    const acts = r.self ?
+      `<button class="disabled">visit</button>
+       <button onclick="copyUrl(${r.id})">copy url</button>
+       <button class="disabled">rename</button>
+       <button class="disabled">restart</button>
+       <button class="kill disabled" title="cannot kill self">kill</button>` :
+      r.remembered ?
+      `<button class="disabled">visit</button>
+       <button class="disabled">copy url</button>
+       <button onclick="openRename(${r.id})">rename</button>
+       <button class="restart-ready" onclick="openRestart(${r.id})">restart</button>
+       <button class="kill disabled">kill</button>` :
+      `<button onclick="visit(${r.id})">visit</button>
+       <button onclick="copyUrl(${r.id})">copy url</button>
+       <button onclick="openRename(${r.id})">rename</button>
+       <button onclick="openRestart(${r.id})">restart</button>
+       <button class="kill" onclick="openKill(${r.id})">kill</button>`;
+    out.push(`<tr class="${cls}" data-id="${r.id}">
+      ${portCell}
+      <td class="label">${esc(r.label)}</td>
+      <td class="cmd">${esc(r.cmd)}</td>
+      <td class="cwd">${esc(r.cwd)}<span class="copy" title="copy cwd" onclick="copyCwd(${r.id})">⎘</span></td>
+      <td class="up">${esc(r.up)}</td>
+      <td class="badges">${badge}</td>
+      <td class="actions">${acts}</td>
+    </tr>`);
+  });
+  $('#rows-desktop').innerHTML = out.join('');
+}
+
+function renderMobile(){
+  const out=[];
+  state.rows.forEach(r=>{
+    const cls=[ 'card', r.self?'self':'', r.remembered?'restart-pending':'', hidden(r)?'hidden':'' ].join(' ');
+    const badge = r.src==='cap' ? '<span class="badge cap">captured</span>'
+                : r.src==='ext' ? '<span class="badge ext">external</span>'
+                : r.src==='self'? '<span class="badge self">self</span>'
+                :                 '<span class="badge">remembered</span>';
+    const portCell = r.port ? `<span class="port">${r.port}</span>` : `<span class="port">—</span>`;
+    const labelCell = r.label ? `<span class="label-inline">${esc(r.label)}</span>` : '';
+    const acts = r.self ?
+      `<button class="disabled">visit</button>
+       <button onclick="copyUrl(${r.id})">copy url</button>
+       <button onclick="copyCwd(${r.id})">copy cwd</button>
+       <button class="disabled">rename</button>
+       <button class="disabled">restart</button>
+       <button class="kill disabled">kill</button>` :
+      r.remembered ?
+      `<button class="disabled">visit</button>
+       <button class="disabled">copy url</button>
+       <button onclick="copyCwd(${r.id})">copy cwd</button>
+       <button onclick="openRename(${r.id})">rename</button>
+       <button class="restart-ready" onclick="openRestart(${r.id})">restart</button>
+       <button class="kill disabled">kill</button>` :
+      `<button onclick="visit(${r.id})">visit</button>
+       <button onclick="copyUrl(${r.id})">copy url</button>
+       <button onclick="copyCwd(${r.id})">copy cwd</button>
+       <button onclick="openRename(${r.id})">rename</button>
+       <button onclick="openRestart(${r.id})">restart</button>
+       <button class="kill" onclick="openKill(${r.id})">kill</button>`;
+    out.push(`<div class="${cls}" data-id="${r.id}">
+      <div class="head">${portCell}${labelCell}${badge}<span class="up">${esc(r.up)}</span></div>
+      <div class="cmd">${esc(r.cmd)}</div>
+      <div class="cwd">${esc(r.cwd)}</div>
+      <div class="card-actions">${acts}</div>
+    </div>`);
+  });
+  $('#rows-mobile').innerHTML = out.join('');
+}
+
+function updateCount(){
+  const live = state.rows.filter(r=>r.alive).length;
+  $('#live-count').textContent = live;
+}
+
+// ── Actions ────────────────────────────────────────────────
+function findRow(id){ return state.rows.find(r=>r.id===id); }
+
+function visit(id){
+  const r = findRow(id);
+  toast(`would open http://yourhost.example:${r.port}/ in a new tab`, 'info');
+}
+function copyUrl(id){
+  const r = findRow(id);
+  const url = r.port ? `http://yourhost.example:${r.port}/` : '—';
+  navigator.clipboard?.writeText(url).catch(()=>{});
+  toast(`copied: ${url}`, 'info');
+}
+function copyCwd(id){
+  const r = findRow(id);
+  navigator.clipboard?.writeText(r.cwd).catch(()=>{});
+  toast(`copied: ${r.cwd}`, 'info');
+}
+
+function openKill(id){
+  state.pendingAction = {type:'kill', id};
+  const r = findRow(id);
+  $('#kill-port').textContent = r.port;
+  $('#kill-body').innerHTML = `<div style="color:var(--magenta); font-weight:600;">${esc(r.label||'(no label)')}</div>
+                                <div style="color:var(--ink); margin-top:4px;">${esc(r.cmd)}</div>
+                                <div style="color:var(--dim); margin-top:2px;">${esc(r.cwd)}</div>`;
+  $('#modal-kill').classList.add('active');
+}
+function confirmKill(){
+  const r = findRow(state.pendingAction.id);
+  r.alive = false; r.remembered = true; r.up = 'killed just now';
+  r.src = 'remembered'; r.port = null;
+  closeModal('modal-kill');
+  toast(`kill submitted for ${r.label||r.cmd}`, 'danger');
+  render();
+}
+
+function openRestart(id){
+  state.pendingAction = {type:'restart', id};
+  const r = findRow(id);
+  $('#restart-port').textContent = r.port || '(new)';
+  $('#restart-body').innerHTML = `<div style="color:var(--ink);">${esc(r.cmd)}</div>
+                                   <div style="color:var(--dim); margin-top:2px;">${esc(r.cwd)}</div>`;
+  $('#modal-restart').classList.add('active');
+}
+function confirmRestart(){
+  const r = findRow(state.pendingAction.id);
+  r.alive = true; r.remembered = false; r.src = 'cap'; r.up = '0s';
+  r.port = r.port || (40400 + Math.floor(Math.random()*50));
+  closeModal('modal-restart');
+  toast(`restart submitted · watch the table for ${r.port}`, 'magenta');
+  render();
+}
+
+function openRename(id){
+  state.pendingAction = {type:'rename', id};
+  $('#rename-input').value = findRow(id).label;
+  $('#modal-rename').classList.add('active');
+  setTimeout(()=>$('#rename-input').focus(), 40);
+}
+function confirmRename(){
+  const r = findRow(state.pendingAction.id);
+  r.label = $('#rename-input').value.trim();
+  closeModal('modal-rename');
+  toast(`label saved: ${r.label||'(cleared)'}`, 'info');
+  render();
+}
+
+function closeModal(id){ $('#'+id).classList.remove('active'); state.pendingAction=null; }
+
+function toggleFilter(mode){
+  state.filter.mode = (state.filter.mode===mode) ? null : mode;
+  $('#filter-ext-btn').classList.toggle('active', state.filter.mode==='ext');
+  $('#filter-cap-btn').classList.toggle('active', state.filter.mode==='cap');
+  render();
+}
+function applyTextFilter(v){ state.filter.text = v; render(); }
+function toggleRestartHistory(){ toast('restart history: last 5 killed entries per (cwd, cmd)', 'info'); }
+
+function simulateRefresh(){
+  // advance uptimes by 2s-ish, flap an 'external' process briefly
+  state.rows.forEach(r=>{
+    if(r.alive && r.up.match(/m/)){ /* leave */ }
+  });
+  toast('scan complete · 8.4ms', 'info');
+  render();
+}
+
+function resetDemo(){
+  state.rows = JSON.parse(JSON.stringify(SEED));
+  state.filter = {mode:null, text:''};
+  $('#search').value='';
+  $('#filter-ext-btn').classList.remove('active');
+  $('#filter-cap-btn').classList.remove('active');
+  $('#token-input').value='';
+  $('#login-err').textContent='';
+  show('login');
+  toast('demo reset', 'info');
+}
+
+function toggleView(){
+  // Fake a mobile breakpoint by letterboxing body
+  const b = document.body;
+  if(b.dataset.mock==='mobile'){
+    b.dataset.mock='';
+    b.style.cssText='';
+    toast('desktop preview', 'info');
+  } else {
+    b.dataset.mock='mobile';
+    b.style.cssText='max-width:420px; margin:0 auto; border-left:1px dashed #334; border-right:1px dashed #334; min-height:100vh;';
+    // trigger @media by narrowing viewport? We need to force the CSS mobile rules.
+    // We re-implement the swap here by adding a class that mimics the breakpoint.
+    toast('mobile preview (420px). resize real window to trigger actual @media rules.', 'info');
+  }
+}
+
+function toast(msg, kind){
+  const el = document.createElement('div');
+  el.className = `toast ${kind||''}`;
+  el.textContent = msg;
+  $('#toast-stack').appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('show'));
+  setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(), 160); }, 2000);
+}
+
+// Submit-on-Enter for login and rename
+$('#token-input').addEventListener('keydown', e=>{ if(e.key==='Enter') tryLogin(); });
+$('#rename-input').addEventListener('keydown', e=>{ if(e.key==='Enter') confirmRename(); if(e.key==='Escape') closeModal('modal-rename'); });
+
+// First render
+render();
+</script>
+</body>
+</html>

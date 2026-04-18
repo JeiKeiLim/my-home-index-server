@@ -1,0 +1,40 @@
+# Environment secrets
+.env
+
+# Built binary
+/port-manager
+
+# Runtime state (default lives in ~/.port-manager/, but guard against
+# developers pointing it here during testing).
+state.json
+
+# Node / Playwright
+node_modules/
+playwright-report/
+
+# E2E seed pid registry
+tests/acceptance/e2e/.seed-pids.json
+
+# Release artifacts
+dist/
+
+# Per-developer agent/editor state
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+
+# Playwright MCP scratch + test artifacts
+.playwright-mcp/
+test-results/
+
+# Stray eval screenshots at repo root (real screenshot lives in docs/)
+/*.png
+
+# SQLite runtime artifacts inside tenet state (runtime-only, never committed)
+.tenet/.state/tenet.db
+.tenet/.state/tenet.db-wal
+.tenet/.state/tenet.db-shm
+
+# Tenet auto-generated status snapshots (regenerate per run)
+.tenet/status/backlog.md
+.tenet/status/job-queue.md
+.tenet/status/status.md

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>port-manager · dashboard</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="/static/htmx.min.js" defer></script>
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header>
+    <div class="brand"><span class="accent">▶</span> port-manager</div>
+    <div class="meta">host <b>{{.PublicHost}}</b> · range <b>{{.PortMin}}–{{.PortMax}}</b> · refresh <b>2s</b></div>
+    <div class="token">auth ok · user <b>{{.User}}</b>
+      <button type="button" class="btn"
+              hx-post="/logout"
+              hx-headers='{"X-Requested-With": "XMLHttpRequest"}'
+              hx-swap="none">logout</button>
+    </div>
+  </header>
+  <main>
+    <div class="toolbar">
+      <button class="btn primary" type="button"
+              hx-get="/ports" hx-target="#ports-body" hx-swap="innerHTML">refresh</button>
+      <button class="btn" type="button"
+              hx-get="/remembered"
+              hx-target="#ports-body"
+              hx-swap="innerHTML">restart history</button>
+      <button class="btn" type="button" data-filter="external">only external</button>
+      <button class="btn" type="button" data-filter="captured">only captured</button>
+      <input id="filter-input" class="btn filter" placeholder="filter: command, label or cwd…" />
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:72px;">port</th>
+          <th style="width:150px;">label</th>
+          <th>command</th>
+          <th>cwd</th>
+          <th style="width:90px;">uptime</th>
+          <th style="width:120px;">source</th>
+          <th style="width:330px; text-align:right;">actions</th>
+        </tr>
+      </thead>
+      <tbody id="ports-body"
+             hx-get="/ports"
+             hx-trigger="load, every 2s"
+             hx-swap="innerHTML"></tbody>
+    </table>
+
+    <div id="rows-mobile" class="cards"></div>
+  </main>
+
+  <!-- Kill confirm modal -->
+  <div class="overlay" id="modal-kill">
+    <div class="modal">
+      <h2>Kill port <span id="kill-port" class="modal-port"></span>?</h2>
+      <p>Sends SIGTERM, waits for the kill-grace window, then SIGKILL if
+         the process is still alive. The row will disappear once the next
+         scan runs.</p>
+      <div class="body" id="kill-body"></div>
+      <div class="row">
+        <button class="btn" type="button" data-modal-close="modal-kill">cancel</button>
+        <button class="btn danger" type="button" id="kill-confirm">SIGTERM → SIGKILL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Restart confirm modal -->
+  <div class="overlay" id="modal-restart">
+    <div class="modal">
+      <h2>Restart port <span id="restart-port" class="modal-port magenta"></span>?</h2>
+      <p>Fire-and-forget re-run of the previously recorded command in its cwd.
+         No stdout capture — check the process's own terminal if you need output.</p>
+      <div class="body" id="restart-body"></div>
+      <div class="row">
+        <button class="btn" type="button" data-modal-close="modal-restart">cancel</button>
+        <button class="btn magenta" type="button" id="restart-confirm">submit restart</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rename modal -->
+  <div class="overlay" id="modal-rename">
+    <div class="modal">
+      <h2>Rename label</h2>
+      <p>Label persists per (cwd, command). Blank label clears it.</p>
+      <input id="rename-input" name="label" placeholder="e.g. staging-api" maxlength="64" />
+      <div class="row">
+        <button class="btn" type="button" data-modal-close="modal-rename">cancel</button>
+        <button class="btn primary" type="button" id="rename-confirm">save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toast-stack"></div>
+
+  <footer>
+    <span class="prompt"></span>scan budget 1s · public host <b>{{.PublicHost}}</b> · session ends on <b>logout</b>
+  </footer>
+
+  <script id="pm-config" type="application/json">{"publicHost":"{{.PublicHost}}"}</script>
+</body>
+</html>

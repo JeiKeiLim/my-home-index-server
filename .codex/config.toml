@@ -1,0 +1,3 @@
+[mcp_servers.tenet]
+command = "tenet"
+args = ["serve"]

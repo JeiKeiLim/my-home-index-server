@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Mockup 2 — Productivity Light</title>
+<style>
+  :root {
+    --bg:#f6f7fb; --panel:#ffffff; --border:#e4e7ef; --ink:#0f172a; --dim:#64748b;
+    --accent:#4f46e5; --accent-soft:#eef2ff; --good:#059669; --warn:#d97706;
+    --danger:#dc2626; --magenta:#db2777;
+    --sans: -apple-system, "Inter", "Segoe UI", Roboto, sans-serif;
+    --mono: "SF Mono", "JetBrains Mono", Menlo, monospace;
+  }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans); font-size:14px; }
+  header { background:var(--panel); border-bottom:1px solid var(--border); padding:14px 28px;
+           display:flex; align-items:center; gap:18px; }
+  header .brand { font-weight:700; font-size:16px; display:flex; align-items:center; gap:8px; }
+  header .brand .dot { width:10px; height:10px; background:var(--good); border-radius:50%;
+                       box-shadow:0 0 0 3px rgba(5,150,105,.15); }
+  header .host { color:var(--dim); font-size:13px; }
+  header .host b { color:var(--ink); }
+  header .user { margin-left:auto; display:flex; align-items:center; gap:10px; color:var(--dim); }
+  header .avatar { width:28px; height:28px; border-radius:50%; background:#e0e7ff; color:var(--accent);
+                    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; }
+  main { padding:24px 28px; max-width:1280px; margin:0 auto; }
+  .stats { display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:16px; margin-bottom:22px; }
+  .stat { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:14px 16px; }
+  .stat .lab { color:var(--dim); font-size:12px; text-transform:uppercase; letter-spacing:.4px; font-weight:600; }
+  .stat .val { font-size:22px; font-weight:700; margin-top:4px; }
+  .stat .foot { color:var(--dim); font-size:12px; margin-top:4px; }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .card-head { padding:12px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; }
+  .card-head h2 { font-size:14px; margin:0; font-weight:700; }
+  .search { margin-left:auto; display:flex; gap:8px; }
+  .search input { padding:6px 10px; border:1px solid var(--border); border-radius:6px; font-size:13px; min-width:220px; }
+  .btn { background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:6px 10px;
+         font-size:13px; cursor:pointer; color:var(--ink); }
+  .btn.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; padding:10px 14px; font-size:11px; text-transform:uppercase; letter-spacing:.5px;
+       color:var(--dim); font-weight:600; background:#fafbfd; border-bottom:1px solid var(--border); }
+  td { padding:12px 14px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  tr:hover td { background:#fafbfd; }
+  .port { display:inline-block; background:var(--accent-soft); color:var(--accent); font-family:var(--mono);
+           padding:3px 8px; border-radius:6px; font-weight:700; font-size:12.5px; }
+  .label-pill { background:#fce7f3; color:var(--magenta); padding:2px 8px; border-radius:10px; font-size:11.5px; font-weight:600; }
+  .cmd { font-family:var(--mono); font-size:12.5px; max-width:300px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cwd { color:var(--dim); font-family:var(--mono); font-size:12px; max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .up { color:var(--dim); font-size:12.5px; }
+  .src { font-size:11.5px; padding:3px 8px; border-radius:12px; font-weight:600; }
+  .src.cap { background:#d1fae5; color:var(--good); }
+  .src.ext { background:#fef3c7; color:var(--warn); }
+  .src.self { background:#fee2e2; color:var(--danger); }
+  .src.rem { background:#ede9fe; color:#6d28d9; }
+  .actions { text-align:right; white-space:nowrap; }
+  .actions button { background:none; border:1px solid var(--border); color:var(--ink); padding:5px 9px;
+                    border-radius:6px; margin-left:4px; cursor:pointer; font-size:12px; }
+  .actions button:hover { border-color:var(--accent); color:var(--accent); }
+  .actions button.kill { color:var(--danger); border-color:#fecaca; }
+  .actions button.kill:hover { background:#fee2e2; }
+  .actions button.disabled { opacity:.4; cursor:not-allowed; }
+  .icon { width:14px; height:14px; vertical-align:-2px; }
+  tr.self td { background:#fafbfd; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="dot"></span>Home Port Manager</div>
+  <div class="host"><b>yourhost.example</b> &middot; ports 40000–40500</div>
+  <div class="user"><span>you@MacBook Pro</span><div class="avatar">J</div></div>
+</header>
+<main>
+  <div class="stats">
+    <div class="stat"><div class="lab">Active listeners</div><div class="val">6</div><div class="foot">4 captured · 2 external</div></div>
+    <div class="stat"><div class="lab">Remembered (killed)</div><div class="val">1</div><div class="foot">click replay to relaunch</div></div>
+    <div class="stat"><div class="lab">Last scan</div><div class="val">8.4ms</div><div class="foot">libproc · every 2s</div></div>
+    <div class="stat"><div class="lab">Uptime (dashboard)</div><div class="val">3h 02m</div><div class="foot">started at 05:37</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h2>Ports in range 40000–40500</h2>
+      <div class="search">
+        <input placeholder="Search command, label or cwd…"/>
+        <button class="btn">Only external</button>
+        <button class="btn primary">+ Launch</button>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Port</th><th>Label</th><th>Command</th><th>Working dir</th>
+          <th>Uptime</th><th>Source</th><th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="port">40102</span></td>
+          <td><span class="label-pill">blog-dev</span></td>
+          <td class="cmd">npm run dev</td>
+          <td class="cwd">~/dev/blog</td>
+          <td class="up">2h 18m</td>
+          <td><span class="src cap">captured</span></td>
+          <td class="actions">
+            <button>visit</button><button>copy</button><button>logs</button>
+            <button>rename</button><button>replay</button><button class="kill">kill</button>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="port">40123</span></td>
+          <td><span class="label-pill">jupyter</span></td>
+          <td class="cmd">jupyter lab --no-browser</td>
+          <td class="cwd">~/notebooks</td>
+          <td class="up">5h 42m</td>
+          <td><span class="src ext">external</span></td>
+          <td class="actions">
+            <button>visit</button><button>copy</button>
+            <button class="disabled" title="logs unavailable — relaunch via dashboard">logs</button>
+            <button>rename</button><button>replay</button><button class="kill">kill</button>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="port">40200</span></td>
+          <td><span class="label-pill">homepage</span></td>
+          <td class="cmd">go run .</td>
+          <td class="cwd">~/GitHub/yourname/homepage</td>
+          <td class="up">41m</td>
+          <td><span class="src cap">captured</span></td>
+          <td class="actions">
+            <button>visit</button><button>copy</button><button>logs</button>
+            <button>rename</button><button>replay</button><button class="kill">kill</button>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="port">40301</span></td>
+          <td></td>
+          <td class="cmd">uvicorn main:app --reload --port 40301</td>
+          <td class="cwd">~/work/demo</td>
+          <td class="up">9m</td>
+          <td><span class="src ext">external</span></td>
+          <td class="actions">
+            <button>visit</button><button>copy</button>
+            <button class="disabled">logs</button>
+            <button>rename</button><button>replay</button><button class="kill">kill</button>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="port">40412</span></td>
+          <td><span class="label-pill">staging-api</span></td>
+          <td class="cmd">node dist/server.js</td>
+          <td class="cwd">~/work/staging-api</td>
+          <td class="up">1d 3h</td>
+          <td><span class="src cap">captured</span></td>
+          <td class="actions">
+            <button>visit</button><button>copy</button><button>logs</button>
+            <button>rename</button><button>replay</button><button class="kill">kill</button>
+          </td>
+        </tr>
+        <tr class="self">
+          <td><span class="port">40000</span></td>
+          <td><span class="label-pill" style="background:#fee2e2; color:var(--danger)">self</span></td>
+          <td class="cmd">./port-manager</td>
+          <td class="cwd">~/src/port-manager</td>
+          <td class="up">3h 02m</td>
+          <td><span class="src self">self</span></td>
+          <td class="actions">
+            <button class="disabled">visit</button>
+            <button>copy</button>
+            <button>logs</button>
+            <button class="disabled">rename</button>
+            <button class="disabled">replay</button>
+            <button class="kill disabled">kill</button>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="port" style="background:#f1f5f9; color:var(--dim)">—</span></td>
+          <td><span class="label-pill">flaky-worker</span></td>
+          <td class="cmd">python worker.py --queue hot</td>
+          <td class="cwd">~/work/worker</td>
+          <td class="up">killed 2m ago</td>
+          <td><span class="src rem">remembered</span></td>
+          <td class="actions">
+            <button class="disabled">visit</button>
+            <button class="disabled">copy</button>
+            <button>logs</button>
+            <button>rename</button>
+            <button style="color:var(--magenta); border-color:#fbcfe8">replay</button>
+            <button class="kill disabled">kill</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+</body>
+</html>

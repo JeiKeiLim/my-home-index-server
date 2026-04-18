@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Architecture — Home Port Manager</title>
+<style>
+  body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         background:#0f172a; color:#e2e8f0; padding:32px; }
+  h1 { margin:0 0 4px; font-size:22px; font-weight:600; }
+  p.sub { margin:0 0 24px; color:#94a3b8; font-size:14px; }
+  .wrap { max-width:1080px; margin:0 auto; }
+  svg { background:#020617; border:1px solid #1e293b; border-radius:12px; }
+  .note { margin-top:20px; padding:16px; background:#0b1220; border:1px solid #1e293b; border-radius:8px;
+          font-size:13px; line-height:1.6; color:#cbd5e1; }
+  .note b { color:#60a5fa; }
+  g.node:hover > rect { stroke-width:2.5; filter: brightness(1.15); }
+  .legend { display:flex; gap:18px; margin-top:16px; font-size:12px; color:#94a3b8; flex-wrap:wrap; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; }
+  .swatch { width:14px; height:10px; border-radius:3px; display:inline-block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Home Port Manager — System Architecture</h1>
+  <p class="sub">Single Go binary running on the user's MacBook. Web UI served at yourhost.example:40000.</p>
+
+  <svg width="1040" height="640" viewBox="0 0 1040 640">
+    <defs>
+      <marker id="arrow" markerWidth="11" markerHeight="8" refX="10" refY="4" orient="auto">
+        <polygon points="0 0, 10 4, 0 8" fill="#64748b"/>
+      </marker>
+      <marker id="arrowAccent" markerWidth="11" markerHeight="8" refX="10" refY="4" orient="auto">
+        <polygon points="0 0, 10 4, 0 8" fill="#f472b6"/>
+      </marker>
+    </defs>
+
+    <!-- Internet / user -->
+    <g class="node">
+      <rect x="30" y="30" width="200" height="72" rx="10" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>
+      <text x="130" y="60" text-anchor="middle" fill="#e2e8f0" font-size="14" font-weight="600">Browser</text>
+      <text x="130" y="82" text-anchor="middle" fill="#94a3b8" font-size="11">yourhost.example:40000</text>
+    </g>
+
+    <!-- Router -->
+    <g class="node">
+      <rect x="30" y="150" width="200" height="72" rx="10" fill="#1e293b" stroke="#60a5fa" stroke-width="1.5"/>
+      <text x="130" y="180" text-anchor="middle" fill="#e2e8f0" font-size="14" font-weight="600">Home Router</text>
+      <text x="130" y="202" text-anchor="middle" fill="#94a3b8" font-size="11">port-forward 40000–40500</text>
+    </g>
+
+    <!-- MacBook boundary -->
+    <rect x="290" y="20" width="720" height="600" rx="14" fill="none" stroke="#334155" stroke-dasharray="6 4" stroke-width="1.5"/>
+    <text x="305" y="42" fill="#94a3b8" font-size="11" font-weight="600">MacBook Pro (macOS 26 arm64)</text>
+
+    <!-- Port manager process (center) -->
+    <g class="node">
+      <rect x="330" y="70" width="340" height="160" rx="10" fill="#0b1220" stroke="#f472b6" stroke-width="2"/>
+      <text x="500" y="96" text-anchor="middle" fill="#e2e8f0" font-size="14" font-weight="700">port-manager (Go binary)</text>
+      <text x="500" y="116" text-anchor="middle" fill="#94a3b8" font-size="11">:40000 listen</text>
+
+      <rect x="348" y="130" width="140" height="36" rx="6" fill="#1e293b" stroke="#38bdf8"/>
+      <text x="418" y="153" text-anchor="middle" fill="#e2e8f0" font-size="11">HTTP router</text>
+
+      <rect x="512" y="130" width="140" height="36" rx="6" fill="#1e293b" stroke="#38bdf8"/>
+      <text x="582" y="153" text-anchor="middle" fill="#e2e8f0" font-size="11">auth middleware</text>
+
+      <rect x="348" y="178" width="140" height="36" rx="6" fill="#1e293b" stroke="#a3e635"/>
+      <text x="418" y="201" text-anchor="middle" fill="#e2e8f0" font-size="11">htmx templates</text>
+
+      <rect x="512" y="178" width="140" height="36" rx="6" fill="#1e293b" stroke="#a3e635"/>
+      <text x="582" y="201" text-anchor="middle" fill="#e2e8f0" font-size="11">SSE broker</text>
+    </g>
+
+    <!-- Internal engines -->
+    <g class="node">
+      <rect x="330" y="260" width="160" height="90" rx="10" fill="#1e293b" stroke="#fbbf24"/>
+      <text x="410" y="286" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="600">Port Scanner</text>
+      <text x="410" y="306" text-anchor="middle" fill="#94a3b8" font-size="10">cgo proc_pidinfo</text>
+      <text x="410" y="322" text-anchor="middle" fill="#94a3b8" font-size="10">PROC_PIDFDSOCKETINFO</text>
+      <text x="410" y="338" text-anchor="middle" fill="#94a3b8" font-size="10">every 2s · uid filter</text>
+    </g>
+    <g class="node">
+      <rect x="510" y="260" width="160" height="90" rx="10" fill="#1e293b" stroke="#fbbf24"/>
+      <text x="590" y="286" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="600">Process Inspector</text>
+      <text x="590" y="306" text-anchor="middle" fill="#94a3b8" font-size="10">gopsutil v4</text>
+      <text x="590" y="322" text-anchor="middle" fill="#94a3b8" font-size="10">cmdline · cwd · start</text>
+      <text x="590" y="338" text-anchor="middle" fill="#94a3b8" font-size="10">KERN_PROCARGS2 (envp)</text>
+    </g>
+    <g class="node">
+      <rect x="690" y="260" width="160" height="90" rx="10" fill="#1e293b" stroke="#fbbf24"/>
+      <text x="770" y="286" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="600">Process Manager</text>
+      <text x="770" y="306" text-anchor="middle" fill="#94a3b8" font-size="10">SIGTERM → (3s) → SIGKILL</text>
+      <text x="770" y="322" text-anchor="middle" fill="#94a3b8" font-size="10">spawn replay (os/exec)</text>
+      <text x="770" y="338" text-anchor="middle" fill="#94a3b8" font-size="10">ring-buffered stdout</text>
+    </g>
+
+    <!-- Storage -->
+    <g class="node">
+      <rect x="330" y="380" width="200" height="70" rx="10" fill="#111827" stroke="#a78bfa"/>
+      <text x="430" y="405" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="600">labels + replay state</text>
+      <text x="430" y="426" text-anchor="middle" fill="#94a3b8" font-size="10">~/.port-manager/state.json</text>
+      <text x="430" y="442" text-anchor="middle" fill="#94a3b8" font-size="10">atomic rename writes</text>
+    </g>
+    <g class="node">
+      <rect x="560" y="380" width="200" height="70" rx="10" fill="#111827" stroke="#a78bfa"/>
+      <text x="660" y="405" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="600">ring buffers (in-mem)</text>
+      <text x="660" y="426" text-anchor="middle" fill="#94a3b8" font-size="10">per dashboard-spawned PID</text>
+      <text x="660" y="442" text-anchor="middle" fill="#94a3b8" font-size="10">last 1000 lines · SSE fan-out</text>
+    </g>
+    <g class="node">
+      <rect x="790" y="380" width="200" height="70" rx="10" fill="#111827" stroke="#a78bfa"/>
+      <text x="890" y="405" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="600">.env config</text>
+      <text x="890" y="426" text-anchor="middle" fill="#94a3b8" font-size="10">AUTH_TOKEN · PUBLIC_HOST</text>
+      <text x="890" y="442" text-anchor="middle" fill="#94a3b8" font-size="10">PORT · RANGE · GRACE_MS</text>
+    </g>
+
+    <!-- User processes row -->
+    <g class="node">
+      <rect x="330" y="490" width="120" height="110" rx="10" fill="#0b1220" stroke="#4ade80"/>
+      <text x="390" y="515" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="600">Next.js</text>
+      <text x="390" y="535" text-anchor="middle" fill="#94a3b8" font-size="10">:40102</text>
+      <text x="390" y="555" text-anchor="middle" fill="#94a3b8" font-size="10">npm run dev</text>
+      <text x="390" y="575" text-anchor="middle" fill="#94a3b8" font-size="10">~/dev/blog</text>
+      <text x="390" y="592" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="600">(dashboard-spawned)</text>
+    </g>
+    <g class="node">
+      <rect x="460" y="490" width="120" height="110" rx="10" fill="#0b1220" stroke="#4ade80"/>
+      <text x="520" y="515" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="600">Jupyter</text>
+      <text x="520" y="535" text-anchor="middle" fill="#94a3b8" font-size="10">:40123</text>
+      <text x="520" y="555" text-anchor="middle" fill="#94a3b8" font-size="10">jupyter lab</text>
+      <text x="520" y="575" text-anchor="middle" fill="#94a3b8" font-size="10">~/notebooks</text>
+      <text x="520" y="592" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="600">(external — logs unavailable)</text>
+    </g>
+    <g class="node">
+      <rect x="590" y="490" width="120" height="110" rx="10" fill="#0b1220" stroke="#4ade80"/>
+      <text x="650" y="515" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="600">Go HTTP</text>
+      <text x="650" y="535" text-anchor="middle" fill="#94a3b8" font-size="10">:40200</text>
+      <text x="650" y="555" text-anchor="middle" fill="#94a3b8" font-size="10">go run .</text>
+      <text x="650" y="575" text-anchor="middle" fill="#94a3b8" font-size="10">~/GitHub/homepage</text>
+      <text x="650" y="592" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="600">(dashboard-spawned)</text>
+    </g>
+    <g class="node">
+      <rect x="720" y="490" width="120" height="110" rx="10" fill="#0b1220" stroke="#4ade80"/>
+      <text x="780" y="515" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="600">FastAPI</text>
+      <text x="780" y="535" text-anchor="middle" fill="#94a3b8" font-size="10">:40301</text>
+      <text x="780" y="555" text-anchor="middle" fill="#94a3b8" font-size="10">uvicorn main:app</text>
+      <text x="780" y="575" text-anchor="middle" fill="#94a3b8" font-size="10">~/work/demo</text>
+      <text x="780" y="592" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="600">(external)</text>
+    </g>
+    <g class="node">
+      <rect x="850" y="490" width="140" height="110" rx="10" fill="#0b1220" stroke="#f87171" stroke-dasharray="5 3"/>
+      <text x="920" y="515" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="600">Dashboard self</text>
+      <text x="920" y="535" text-anchor="middle" fill="#94a3b8" font-size="10">:40000</text>
+      <text x="920" y="555" text-anchor="middle" fill="#94a3b8" font-size="10">./port-manager</text>
+      <text x="920" y="575" text-anchor="middle" fill="#94a3b8" font-size="10">(excluded from list,</text>
+      <text x="920" y="592" text-anchor="middle" fill="#f87171" font-size="10" font-weight="600">kill disabled)</text>
+    </g>
+
+    <!-- Connections: browser -> router -> pm -->
+    <path d="M 130 102 L 130 148" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M 230 186 L 328 150" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- pm internal down to engines -->
+    <path d="M 410 230 L 410 258" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <path d="M 500 230 L 590 258" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <path d="M 570 230 L 770 258" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- engines to storage -->
+    <path d="M 590 350 L 660 378" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <path d="M 770 350 L 660 378" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <path d="M 410 350 L 430 378" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- .env -> pm -->
+    <path d="M 890 380 L 620 230" stroke="#64748b" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#arrow)"/>
+
+    <!-- engines to user processes -->
+    <path d="M 410 350 L 390 488" stroke="#f472b6" stroke-width="1.5" marker-end="url(#arrowAccent)"/>
+    <path d="M 410 350 L 520 488" stroke="#f472b6" stroke-width="1.5" marker-end="url(#arrowAccent)"/>
+    <path d="M 590 350 L 650 488" stroke="#f472b6" stroke-width="1.5" marker-end="url(#arrowAccent)"/>
+    <path d="M 770 350 L 780 488" stroke="#f472b6" stroke-width="1.5" marker-end="url(#arrowAccent)"/>
+    <path d="M 770 350 L 920 488" stroke="#f472b6" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#arrowAccent)"/>
+  </svg>
+
+  <div class="legend">
+    <span><i class="swatch" style="background:#f472b6"></i>inspect / kill / spawn (magenta paths)</span>
+    <span><i class="swatch" style="background:#64748b"></i>HTTP / data flow</span>
+    <span><i class="swatch" style="background:#4ade80"></i>user-owned TCP listener</span>
+    <span><i class="swatch" style="background:#fbbf24;"></i>external process (no log capture)</span>
+    <span><i class="swatch" style="background:#f87171;"></i>self (excluded from UI actions)</span>
+  </div>
+
+  <div class="note">
+    <b>Critical path:</b> every 2s, the <b>Port Scanner</b> walks own-uid PIDs via libproc (no subprocess, ~10ms),
+    collects all TCP listeners in 40000–40500, enriches them through <b>Process Inspector</b>, and the
+    <b>HTTP router</b> renders the table. The dashboard <b>excludes its own PID</b>.<br/>
+    <b>Actions:</b> kill sends SIGTERM → waits 3s → SIGKILL fallback; replay re-spawns via <code>os/exec</code>
+    with detached pgid, piping stdout+stderr into the <b>ring buffer</b> for that PID; SSE streams to the browser.<br/>
+    <b>External processes</b> (launched outside the dashboard) show all metadata but their log rows display
+    "logs unavailable — relaunch via dashboard to capture" per the macOS log-capture feasibility research.
+  </div>
+</div>
+</body>
+</html>

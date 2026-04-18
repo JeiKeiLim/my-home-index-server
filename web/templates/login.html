@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>port-manager · login</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body class="login">
+  <header>
+    <div class="brand"><span class="accent">▶</span> port-manager</div>
+    <div class="meta">host <b>{{.PublicHost}}</b></div>
+  </header>
+  <main class="login-main">
+    <form method="POST" action="/login" class="login-form" autocomplete="off">
+      {{if .Next}}<input type="hidden" name="next" value="{{.Next}}" />{{end}}
+      <label for="token">paste auth token</label>
+      <input id="token" name="token" type="password" autofocus required
+             autocomplete="current-password" spellcheck="false" />
+      {{if .Error}}<div class="error" role="alert">{{.Error}}</div>{{end}}
+      <button type="submit" class="btn primary">sign in</button>
+    </form>
+  </main>
+  <footer>
+    <span class="prompt"></span>plain HTTP · session cookie HttpOnly · 5 attempts/15min lockout per IP
+  </footer>
+</body>
+</html>

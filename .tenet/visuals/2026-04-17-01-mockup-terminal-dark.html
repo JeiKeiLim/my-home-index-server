@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mockup 1 — Terminal Dark (responsive, chosen)</title>
+<style>
+  :root {
+    --bg: #0a0e14; --panel:#0f141b; --row:#0c1118; --row-alt:#0a0e14;
+    --border:#1e2631; --ink:#d7dde3; --dim:#7a8292;
+    --accent:#64d89f; --warn:#f1c36a; --danger:#f07a7a;
+    --info:#72c1f4; --magenta:#d876d8;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--mono); font-size:13px; }
+  header { padding:14px 20px; border-bottom:1px solid var(--border);
+           display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  header .brand { font-weight:700; letter-spacing:.5px; color:var(--ink); }
+  header .brand span.accent { color:var(--accent); }
+  header .meta { color:var(--dim); font-size:12px; }
+  header .token { margin-left:auto; color:var(--dim); font-size:12px; }
+  header .token b { color:var(--info); }
+  main { padding:18px 20px; }
+  .toolbar { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+  .btn { background:var(--panel); color:var(--ink); border:1px solid var(--border); border-radius:4px;
+         padding:6px 10px; font-family:var(--mono); font-size:12px; cursor:pointer; }
+  .btn:hover { border-color:var(--accent); }
+  .btn.primary { border-color:var(--accent); color:var(--accent); }
+
+  /* ── Desktop table ─────────────────────────── */
+  table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  th { text-align:left; padding:8px 10px; color:var(--dim); font-weight:600;
+       border-bottom:1px solid var(--border);
+       text-transform:uppercase; letter-spacing:.6px; font-size:10.5px; }
+  td { padding:10px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  tr:nth-child(even) td { background:var(--row); }
+  td.port { color:var(--accent); font-weight:700; }
+  td.cmd { white-space:nowrap; max-width:320px; overflow:hidden; text-overflow:ellipsis; }
+  td.cwd { color:var(--dim); font-size:11.5px; white-space:nowrap;
+           max-width:260px; overflow:hidden; text-overflow:ellipsis; }
+  td.cwd .copy { display:inline-block; margin-left:4px; padding:0 4px;
+                 border:1px solid var(--border); border-radius:3px;
+                 color:var(--dim); font-size:10.5px; cursor:pointer;
+                 vertical-align:1px; }
+  td.cwd .copy:hover { color:var(--info); border-color:var(--info); }
+  td.up { color:var(--dim); white-space:nowrap; }
+  td.label { color:var(--magenta); font-weight:600; }
+  td.badges span { display:inline-block; padding:2px 6px; border-radius:3px;
+                   border:1px solid var(--border); font-size:10px;
+                   color:var(--dim); margin-right:3px; }
+  td.badges span.cap { color:var(--accent); border-color:var(--accent); }
+  td.badges span.ext { color:var(--warn); border-color:var(--warn); }
+  td.badges span.self { color:var(--danger); border-color:var(--danger); }
+  td.actions { white-space:nowrap; text-align:right; }
+  td.actions button, .card-actions button {
+    background:none; border:1px solid var(--border); color:var(--dim);
+    padding:4px 8px; border-radius:3px; margin-left:3px; cursor:pointer;
+    font-family:var(--mono); font-size:11px;
+  }
+  td.actions button.kill, .card-actions button.kill {
+    color:var(--danger); border-color:#3a2428;
+  }
+  td.actions button.kill:hover, .card-actions button.kill:hover {
+    background:#2a1518; border-color:var(--danger);
+  }
+  td.actions button:hover, .card-actions button:hover {
+    border-color:var(--info); color:var(--info);
+  }
+  td.actions button.disabled, .card-actions button.disabled {
+    opacity:.35; cursor:not-allowed;
+  }
+  td.actions button.restart-ready, .card-actions button.restart-ready {
+    color:var(--magenta); border-color:#3a2640;
+  }
+  tr.self td { opacity:.75; background:#0d1016; }
+  tr.restart-pending td { background:#141026; border-left:2px solid var(--magenta); }
+  footer { padding:12px 20px; border-top:1px solid var(--border);
+           color:var(--dim); font-size:11px; }
+  .prompt::before { content:"$ "; color:var(--accent); }
+
+  /* ── Mobile card view ──────────────────────── */
+  .cards { display:none; }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:8px;
+          padding:12px; margin-bottom:10px; }
+  .card.self { opacity:.8; border-left:3px solid var(--danger); }
+  .card.restart-pending { border-left:3px solid var(--magenta); }
+  .card .head { display:flex; align-items:center; gap:10px; margin-bottom:8px;
+                flex-wrap:wrap; }
+  .card .head .port { color:var(--accent); font-weight:700; font-size:16px; }
+  .card .head .label-inline { color:var(--magenta); font-weight:600; font-size:13px; }
+  .card .head .badge { padding:2px 7px; border-radius:3px; font-size:10.5px;
+                       border:1px solid var(--border); color:var(--dim); }
+  .card .head .badge.cap { color:var(--accent); border-color:var(--accent); }
+  .card .head .badge.ext { color:var(--warn); border-color:var(--warn); }
+  .card .head .badge.self { color:var(--danger); border-color:var(--danger); }
+  .card .head .up { color:var(--dim); margin-left:auto; font-size:12px; }
+  .card .cmd { color:var(--ink); font-size:13px; margin-bottom:4px; word-break:break-all; }
+  .card .cwd { color:var(--dim); font-size:11.5px; margin-bottom:10px; word-break:break-all; }
+  .card-actions { display:flex; gap:6px; flex-wrap:wrap; }
+  .card-actions button { margin-left:0; padding:7px 10px; font-size:12px; flex:0 1 auto; }
+
+  /* Responsive breakpoint ────────────────────── */
+  @media (max-width: 820px) {
+    table { display:none; }
+    .cards { display:block; }
+    header .token { display:none; }
+    main { padding:14px; }
+    .toolbar .btn { flex:1 1 auto; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="accent">▶</span> port-manager</div>
+  <div class="meta">host <b>yourhost.example</b> · range <b>40000–40500</b> · refresh <b>2s</b></div>
+  <div class="token">auth ok · token rotated <b>14m ago</b> · user <b>you</b></div>
+</header>
+<main>
+  <div class="toolbar">
+    <button class="btn primary">refresh</button>
+    <button class="btn">only external</button>
+    <button class="btn">only captured</button>
+    <button class="btn">restart history</button>
+    <input class="btn" placeholder="filter: command, label or cwd…"
+           style="flex:1; min-width:180px; background:var(--panel); color:var(--ink);
+                  border-color:var(--border); text-align:left;"/>
+  </div>
+
+  <!-- ── Desktop table ─────────────────────────────── -->
+  <table>
+    <thead>
+      <tr>
+        <th style="width:72px;">port</th>
+        <th style="width:150px;">label</th>
+        <th>command</th>
+        <th>cwd</th>
+        <th style="width:90px;">uptime</th>
+        <th style="width:120px;">source</th>
+        <th style="width:330px; text-align:right;">actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="port">40102</td>
+        <td class="label">blog-dev</td>
+        <td class="cmd">npm run dev</td>
+        <td class="cwd">~/dev/blog<span class="copy" title="copy cwd">⎘</span></td>
+        <td class="up">2h 18m</td>
+        <td class="badges"><span class="cap">captured</span></td>
+        <td class="actions">
+          <button>visit</button><button>copy url</button>          <button>rename</button><button>restart</button><button class="kill">kill</button>
+        </td>
+      </tr>
+      <tr>
+        <td class="port">40123</td>
+        <td class="label">jupyter</td>
+        <td class="cmd">jupyter lab --no-browser</td>
+        <td class="cwd">~/notebooks<span class="copy" title="copy cwd">⎘</span></td>
+        <td class="up">5h 42m</td>
+        <td class="badges"><span class="ext">external</span></td>
+        <td class="actions">
+          <button>visit</button><button>copy url</button>
+          <button>rename</button><button>restart</button><button class="kill">kill</button>
+        </td>
+      </tr>
+      <tr>
+        <td class="port">40200</td>
+        <td class="label">homepage</td>
+        <td class="cmd">go run .</td>
+        <td class="cwd">~/GitHub/yourname/homepage<span class="copy" title="copy cwd">⎘</span></td>
+        <td class="up">41m</td>
+        <td class="badges"><span class="cap">captured</span></td>
+        <td class="actions">
+          <button>visit</button><button>copy url</button>          <button>rename</button><button>restart</button><button class="kill">kill</button>
+        </td>
+      </tr>
+      <tr>
+        <td class="port">40301</td>
+        <td class="label"></td>
+        <td class="cmd">uvicorn main:app --reload --port 40301</td>
+        <td class="cwd">~/work/demo<span class="copy" title="copy cwd">⎘</span></td>
+        <td class="up">9m</td>
+        <td class="badges"><span class="ext">external</span></td>
+        <td class="actions">
+          <button>visit</button><button>copy url</button>
+          <button>rename</button><button>restart</button><button class="kill">kill</button>
+        </td>
+      </tr>
+      <tr>
+        <td class="port">40412</td>
+        <td class="label">staging-api</td>
+        <td class="cmd">node dist/server.js</td>
+        <td class="cwd">~/work/staging-api<span class="copy" title="copy cwd">⎘</span></td>
+        <td class="up">1d 3h</td>
+        <td class="badges"><span class="cap">captured</span></td>
+        <td class="actions">
+          <button>visit</button><button>copy url</button>          <button>rename</button><button>restart</button><button class="kill">kill</button>
+        </td>
+      </tr>
+      <tr class="self">
+        <td class="port">40000</td>
+        <td class="label">self</td>
+        <td class="cmd">./port-manager</td>
+        <td class="cwd">~/src/port-manager<span class="copy" title="copy cwd">⎘</span></td>
+        <td class="up">3h 02m</td>
+        <td class="badges"><span class="self">self</span></td>
+        <td class="actions">
+          <button class="disabled">visit</button>
+          <button>copy url</button>
+                    <button class="disabled">rename</button>
+          <button class="disabled">restart</button>
+          <button class="kill disabled" title="cannot kill self">kill</button>
+        </td>
+      </tr>
+      <tr class="restart-pending">
+        <td class="port">—</td>
+        <td class="label">flaky-worker</td>
+        <td class="cmd">python worker.py --queue hot</td>
+        <td class="cwd">~/work/worker<span class="copy" title="copy cwd">⎘</span></td>
+        <td class="up">killed 2m ago</td>
+        <td class="badges"><span>remembered</span></td>
+        <td class="actions">
+          <button class="disabled">visit</button>
+          <button class="disabled">copy</button>
+                    <button>rename</button>
+          <button class="restart-ready">restart</button>
+          <button class="disabled kill">kill</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ── Mobile card view ──────────────────────────── -->
+  <div class="cards">
+    <div class="card">
+      <div class="head">
+        <span class="port">40102</span>
+        <span class="label-inline">blog-dev</span>
+        <span class="badge cap">captured</span>
+        <span class="up">2h 18m</span>
+      </div>
+      <div class="cmd">npm run dev</div>
+      <div class="cwd">~/dev/blog</div>
+      <div class="card-actions">
+        <button>visit</button><button>copy url</button><button>copy cwd</button>
+        <button>rename</button>
+        <button>restart</button><button class="kill">kill</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="head">
+        <span class="port">40123</span>
+        <span class="label-inline">jupyter</span>
+        <span class="badge ext">external</span>
+        <span class="up">5h 42m</span>
+      </div>
+      <div class="cmd">jupyter lab --no-browser</div>
+      <div class="cwd">~/notebooks</div>
+      <div class="card-actions">
+        <button>visit</button><button>copy url</button><button>copy cwd</button>
+        <button>rename</button><button>restart</button><button class="kill">kill</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="head">
+        <span class="port">40200</span>
+        <span class="label-inline">homepage</span>
+        <span class="badge cap">captured</span>
+        <span class="up">41m</span>
+      </div>
+      <div class="cmd">go run .</div>
+      <div class="cwd">~/GitHub/yourname/homepage</div>
+      <div class="card-actions">
+        <button>visit</button><button>copy url</button><button>copy cwd</button>
+        <button>rename</button>
+        <button>restart</button><button class="kill">kill</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="head">
+        <span class="port">40301</span>
+        <span class="badge ext">external</span>
+        <span class="up">9m</span>
+      </div>
+      <div class="cmd">uvicorn main:app --reload --port 40301</div>
+      <div class="cwd">~/work/demo</div>
+      <div class="card-actions">
+        <button>visit</button><button>copy url</button><button>copy cwd</button>
+        <button>rename</button><button>restart</button><button class="kill">kill</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="head">
+        <span class="port">40412</span>
+        <span class="label-inline">staging-api</span>
+        <span class="badge cap">captured</span>
+        <span class="up">1d 3h</span>
+      </div>
+      <div class="cmd">node dist/server.js</div>
+      <div class="cwd">~/work/staging-api</div>
+      <div class="card-actions">
+        <button>visit</button><button>copy url</button><button>copy cwd</button>
+        <button>rename</button>
+        <button>restart</button><button class="kill">kill</button>
+      </div>
+    </div>
+    <div class="card self">
+      <div class="head">
+        <span class="port">40000</span>
+        <span class="label-inline" style="color:var(--danger)">self</span>
+        <span class="badge self">self</span>
+        <span class="up">3h 02m</span>
+      </div>
+      <div class="cmd">./port-manager</div>
+      <div class="cwd">~/src/port-manager</div>
+      <div class="card-actions">
+        <button class="disabled">visit</button>
+        <button>copy url</button><button>copy cwd</button>
+                <button class="disabled">rename</button>
+        <button class="disabled">restart</button>
+        <button class="kill disabled">kill</button>
+      </div>
+    </div>
+    <div class="card restart-pending">
+      <div class="head">
+        <span class="port">—</span>
+        <span class="label-inline">flaky-worker</span>
+        <span class="badge">remembered</span>
+        <span class="up">killed 2m ago</span>
+      </div>
+      <div class="cmd">python worker.py --queue hot</div>
+      <div class="cwd">~/work/worker</div>
+      <div class="card-actions">
+        <button class="disabled">visit</button>
+        <button class="disabled">copy url</button><button>copy cwd</button>
+                <button>rename</button>
+        <button class="restart-ready">restart</button>
+        <button class="disabled kill">kill</button>
+      </div>
+    </div>
+  </div>
+</main>
+<footer>
+  <span class="prompt"></span>scanning 127 own-uid PIDs · 6 listeners in range · libproc scan 8.4ms · restart is the only spawn path · session ends on <b>ctrl-c</b>
+</footer>
+</body>
+</html>

@@ -1,0 +1,83 @@
+{{- /* Desktop table rows — primary swap target (#ports-body). */ -}}
+{{range .}}
+<tr {{if .Self}}class="self"{{else if .Remembered}}class="restart-pending"{{end}} data-port="{{.Port}}" data-pid="{{.PID}}" data-cwd="{{.Cwd}}">
+  <td class="port">{{if .Port}}{{.Port}}{{else}}—{{end}}</td>
+  <td class="label">{{.Label}}</td>
+  <td class="cmd">{{.Cmd}}</td>
+  <td class="cwd">{{.Cwd}}{{if .Cwd}}<span class="copy" title="copy cwd" data-copy-cwd="{{.Cwd}}">⎘</span>{{end}}</td>
+  <td class="up">{{.Uptime}}</td>
+  <td class="badges">
+    {{- if eq .Source "captured"}}<span class="cap">captured</span>
+    {{- else if .Self}}<span class="self">self</span>
+    {{- else if .Remembered}}<span>remembered</span>
+    {{- else}}<span class="ext">external</span>
+    {{- end}}
+  </td>
+  <td class="actions">
+    {{- if .Disabled}}
+    <button class="disabled" type="button">visit</button>
+    <button type="button" data-copy-url="{{.Port}}">copy url</button>
+    <button class="disabled" type="button">rename</button>
+    <button class="disabled" type="button">restart</button>
+    <button class="kill disabled" type="button" title="cannot kill self">kill</button>
+    {{- else}}
+    <button type="button" data-visit="{{.Port}}">visit</button>
+    <button type="button" data-copy-url="{{.Port}}">copy url</button>
+    <button type="button" data-rename="{{.Port}}" data-cwd="{{.Cwd}}" data-label="{{.Label}}">rename</button>
+    {{- if and .Remembered .RememberedID}}
+    <button type="button" class="restart-ready" data-restart="{{.RememberedID}}">restart</button>
+    {{- else}}
+    <button type="button" class="disabled">restart</button>
+    {{- end}}
+    <button type="button" class="kill" data-kill="{{.Port}}" data-pid="{{.PID}}" data-cmd="{{.Cmd}}" data-cwd="{{.Cwd}}" data-label="{{.Label}}">kill</button>
+    {{- end}}
+  </td>
+</tr>
+{{end -}}
+
+{{- /* Mobile cards — out-of-band swap into the #rows-mobile container.
+       Wrapped in <template> so HTML5 foster-parenting doesn't hoist the
+       <div> subtree out of <tbody> (which is the primary swap target).
+       htmx 2.x walks template.content looking for [hx-swap-oob] and
+       performs the swap against the live #rows-mobile in <main>. */ -}}
+<template>
+<div id="rows-mobile" class="cards" hx-swap-oob="true">
+{{range .}}
+<div class="card{{if .Self}} self{{else if .Remembered}} restart-pending{{end}}" data-port="{{.Port}}" data-pid="{{.PID}}" data-cwd="{{.Cwd}}">
+  <div class="head">
+    <span class="port">{{if .Port}}{{.Port}}{{else}}—{{end}}</span>
+    {{- if .Label}}<span class="label-inline"{{if .Self}} style="color:var(--danger)"{{end}}>{{.Label}}</span>{{end}}
+    {{- if eq .Source "captured"}}<span class="badge cap">captured</span>
+    {{- else if .Self}}<span class="badge self">self</span>
+    {{- else if .Remembered}}<span class="badge">remembered</span>
+    {{- else}}<span class="badge ext">external</span>
+    {{- end}}
+    <span class="up">{{.Uptime}}</span>
+  </div>
+  <div class="cmd">{{.Cmd}}</div>
+  <div class="cwd">{{.Cwd}}</div>
+  <div class="card-actions">
+    {{- if .Disabled}}
+    <button class="disabled" type="button">visit</button>
+    <button type="button" data-copy-url="{{.Port}}">copy url</button>
+    <button type="button" data-copy-cwd="{{.Cwd}}">copy cwd</button>
+    <button class="disabled" type="button">rename</button>
+    <button class="disabled" type="button">restart</button>
+    <button class="kill disabled" type="button">kill</button>
+    {{- else}}
+    <button type="button" data-visit="{{.Port}}">visit</button>
+    <button type="button" data-copy-url="{{.Port}}">copy url</button>
+    <button type="button" data-copy-cwd="{{.Cwd}}">copy cwd</button>
+    <button type="button" data-rename="{{.Port}}" data-cwd="{{.Cwd}}" data-label="{{.Label}}">rename</button>
+    {{- if and .Remembered .RememberedID}}
+    <button type="button" class="restart-ready" data-restart="{{.RememberedID}}">restart</button>
+    {{- else}}
+    <button type="button" class="disabled">restart</button>
+    {{- end}}
+    <button type="button" class="kill" data-kill="{{.Port}}" data-pid="{{.PID}}" data-cmd="{{.Cmd}}" data-cwd="{{.Cwd}}" data-label="{{.Label}}">kill</button>
+    {{- end}}
+  </div>
+</div>
+{{end -}}
+</div>
+</template>

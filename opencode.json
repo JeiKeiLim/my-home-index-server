@@ -1,0 +1,11 @@
+{
+  "mcp": {
+    "tenet": {
+      "type": "local",
+      "command": [
+        "tenet",
+        "serve"
+      ]
+    }
+  }
+}
