@@ -240,21 +240,31 @@ func (s *libprocScanner) Scan(ctx context.Context) ([]Listener, error) {
 // listAllPIDs returns every pid the kernel knows about. Size discovery
 // is done with a nil buffer; the fill call is sized with slack so new
 // pids spawned between the two calls don't truncate the result.
+//
+// proc_listallpids return-value convention on darwin: the libproc
+// wrapper returns the **count of pids** written (or the pid count the
+// kernel would have written if buffer is NULL), NOT the byte count.
+// Empirically verified on macOS 26: passing slots=N where N is smaller
+// than the real pid count returns exactly N; passing a large buffer
+// returns ~798 on a 794-process system. Treating the return as bytes
+// and dividing by sizeof(pid_t) silently truncates the pid table to
+// ~1/4 and causes the scanner to miss most listeners.
 func listAllPIDs() ([]int32, error) {
-	const int32Size = 4
-	bytes := int(C.pm_list_all_pids(nil, 0))
-	if bytes <= 0 {
-		return nil, fmt.Errorf("scanner: proc_listallpids(size) returned %d", bytes)
+	count := int(C.pm_list_all_pids(nil, 0))
+	if count <= 0 {
+		return nil, fmt.Errorf("scanner: proc_listallpids(size) returned %d", count)
 	}
-	slots := bytes/int32Size + 128
+	// Pad for races: new pids may spawn between the size query and the
+	// fill call. 128 extra slots also absorbs the common case where the
+	// size query is a lower bound.
+	slots := count + 128
 	buf := make([]int32, slots)
-	n := int(C.pm_list_all_pids(unsafe.Pointer(&buf[0]), C.int(slots*int32Size)))
+	n := int(C.pm_list_all_pids(unsafe.Pointer(&buf[0]), C.int(slots*4)))
 	if n <= 0 {
 		return nil, fmt.Errorf("scanner: proc_listallpids returned %d", n)
 	}
-	count := n / int32Size
-	if count > slots {
-		count = slots
+	if n > slots {
+		n = slots
 	}
-	return buf[:count], nil
+	return buf[:n], nil
 }

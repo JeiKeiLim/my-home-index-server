@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -348,6 +349,38 @@ func TestA11_NoFDLeakOverManyScans(t *testing.T) {
 					impl, end-start, iters, fdGrowthBudget, start, end)
 			}
 		})
+	}
+}
+
+// TestListAllPIDs_NoTruncation guards the proc_listallpids return-value
+// convention: the libproc wrapper returns the **count of pids written**,
+// not the byte count. An earlier implementation divided by sizeof(pid_t)
+// thinking the return was bytes, silently truncating the pid table to
+// ~1/4 and causing the scanner to miss any listener whose pid fell past
+// the cut. Symptom in production: a TCP listener reachable over the
+// network simply did not appear in the dashboard.
+//
+// We assert listAllPIDs returns a count consistent with the real system
+// pid count observed via `ps -A`. A broken divide-by-4 would return
+// ≤ ~1/3 of ps's count; we require ≥ 1/2 to stay robust against minor
+// races without masking the regression.
+func TestListAllPIDs_NoTruncation(t *testing.T) {
+	out, err := exec.Command("ps", "-A", "-o", "pid=").Output()
+	if err != nil {
+		t.Fatalf("ps: %v", err)
+	}
+	psCount := strings.Count(strings.TrimSpace(string(out)), "\n") + 1
+	if psCount < 50 {
+		t.Fatalf("ps returned %d pids; this test needs a system with ≥50 processes to be meaningful", psCount)
+	}
+
+	pids, err := scanner.ListAllPIDsForTest()
+	if err != nil {
+		t.Fatalf("listAllPIDs: %v", err)
+	}
+	if len(pids) < psCount/2 {
+		t.Fatalf("listAllPIDs returned %d pids; ps reports %d. Scanner is truncating the pid table — regression of the proc_listallpids byte-vs-count bug.",
+			len(pids), psCount)
 	}
 }
 
