@@ -6,6 +6,17 @@ job_name: unknown
 confidence: decision-only
 created: 2026-04-17T00:04:53.415Z
 
+> **IMPORTANT amendment (2026-04-20):** This doc describes the correct
+> syscall SEQUENCE for listener enumeration, but it is silent on the
+> **return-value conventions** of the wrappers — which differ between
+> `proc_listallpids` (returns pid COUNT) and `proc_pidinfo(PROC_PIDLISTFDS)`
+> (returns BYTES). A post-ship bug shipped in v1 because the original
+> implementation assumed both return bytes. Before touching any
+> libproc wrapper, read
+> `.tenet/knowledge/2026-04-20_proc_listallpids-return-convention.md`
+> and the incident journal
+> `.tenet/journal/2026-04-20_post-ship-bug-libproc-pid-truncation.md`.
+
 ## Findings
 
 - **topic**: Enumerate user-owned TCP listeners in port range on macOS 26 from Go

@@ -104,6 +104,33 @@ Every failure journal + every pass journal is in `.tenet/journal/` and
 references the DB job id, so a future agent can `tenet_continue` + read
 the journals to pick up either the project or lessons for adjacent work.
 
+## Post-ship addendum (2026-04-20)
+
+A sixth observation belongs on this case-study data point:
+
+6. **One post-ship bug escaped the DAG.** On 2026-04-20 the user reported
+   that listeners bound past the first ~1/4 of the pid table were
+   silently missing from the dashboard. Root cause: `listAllPIDs` in the
+   libproc cgo scanner treated `proc_listallpids`'s return as bytes and
+   divided by sizeof(pid_t). The integration test for the scanner
+   passed because it spawned a single python child whose pid usually
+   landed in the preserved quartile by kernel-ordering luck. Fixed in
+   commit `fb83217`. Write-ups:
+   - `.tenet/journal/2026-04-20_post-ship-bug-libproc-pid-truncation.md`
+   - `.tenet/knowledge/2026-04-20_proc_listallpids-return-convention.md`
+
+   **Tenet pipeline lesson:** cgo/syscall wrappers whose return-value
+   semantics aren't unit-testable from pure Go need an empirical probe
+   committed alongside the implementation. Apple's header comment for
+   `proc_listallpids` is ambiguous; source reading alone is not
+   authoritative because conventions drift across xnu versions. The
+   pre-spec research phase correctly identified the syscall sequence
+   but did not probe return-value conventions — future decomposition
+   DAGs for syscall-heavy features should include a dedicated
+   "convention probe" task per syscall before the implementer job.
+   This adds ~1 job to the DAG but would have caught this bug before
+   v1 shipped.
+
 ## Raw queries reproducible
 
 ```sh
